@@ -17,32 +17,53 @@ server.post('/', (req, res) => {
         res.status(200).send('Message saved successfully');
     });
 });
+ 
+
 server.get('/', (req, res) => {
-    res.send("Server is running on http://192.168.175.43:3000 successfully");
-    
+    fs.readFile('messages.txt', 'utf8', (err, data) => {
+        if (err) { 
+            return res.status(500).send('file la onum ila');
+        }
+
+        if (!data.trim()) {
+            return res.json([]); //   if the file is empty
+        }
+
+        try {
+            const messages = data.trim().split('\n').map(line => {
+                try {
+                    return JSON.parse(line);
+                } catch ( err) { 
+                    return null;  
+                }
+            }).filter(msg => msg !== null); // Filter out null values
+
+            res.json(messages);
+        } catch (err) { 
+            res.status(500).send('Error processing file data');
+        }
+    });
 });
 
-// server.get('/', (req, res) => {
-//     fs.readFile('messages.txt', 'utf8', (err, data) => {
-//         if (err) {
-//             return res.status(500).send('Internal Server Error');
-//         }
-//         res.send(data);
-//     });
-// });
-
-server.get('/test', (req, res) => {
-    
-        res.send("Server is running on http://192.168.175.43:3000 successfully");
-  
+ 
+server.get('/clear', (req, res) => {
+    fs.writeFile('messages.txt', '', (err) => {
+        if (err) {
+            console.error('Error clearing file:', err);
+            return res.status(500).send('Error clearing file');
+        }
+        console.log('File content cleared');
+        res.send('File content cleared');
+    });
 });
+
+ 
 
 function saveMessageToFile(data, callback) { 
     const message = JSON.stringify(data) + "\n";
     fs.appendFile('messages.txt', message, callback);
 }
-
-const host = '192.168.175.43';
-server.listen(3000, host, () => {
-    console.log("Server is running on http://192.168.175.43:3000");
+ 
+server.listen(3000, () => {
+    console.log("Server is running on http:/localhost:3000");
 });
